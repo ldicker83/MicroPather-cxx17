@@ -80,13 +80,6 @@ namespace micropather
 			fast function with no callbacks into the pather.
 		*/	
 		virtual void AdjacentCost( void* state, std::vector< micropather::StateCost > *adjacent ) = 0;
-
-		/**
-			This function is only used in DEBUG mode - it dumps output to stdout. Since void* 
-			aren't really human readable, normally you print out some concise info (like "(1,2)") 
-			without an ending newline.
-		*/
-		virtual void  PrintStateInfo( void* state ) = 0;
 	};
 
 
