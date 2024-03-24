@@ -62,9 +62,6 @@ class OpenQueue
 		graph = _graph; 
 		sentinel = (PathNode*) sentinelMem;
 		sentinel->InitSentinel();
-		#ifdef DEBUG
-			sentinel->CheckList();
-		#endif
 	}
 	~OpenQueue()	{}
 
@@ -86,15 +83,8 @@ class OpenQueue
 
 void OpenQueue::Push( PathNode* pNode )
 {
-	
 	assertExpression( pNode->inOpen == 0 );
 	assertExpression( pNode->inClosed == 0 );
-	
-#ifdef DEBUG_PATH_DEEP
-	printf( "Open Push: " );
-	graph->PrintStateInfo( pNode->state );
-	printf( " total=%.1f\n", pNode->totalCost );		
-#endif
 	
 	// Add sorted. Lowest to highest cost path. Note that the sentinel has
 	// a value of FLT_MAX, so it should always be sorted in.
@@ -110,9 +100,6 @@ void OpenQueue::Push( PathNode* pNode )
 		iter = iter->next;
 	}
 	assertExpression( pNode->inOpen );	// make sure this was actually added.
-#ifdef DEBUG
-	sentinel->CheckList();
-#endif
 }
 
 PathNode* OpenQueue::Pop()
@@ -120,31 +107,16 @@ PathNode* OpenQueue::Pop()
 	assertExpression( sentinel->next != sentinel );
 	PathNode* pNode = sentinel->next;
 	pNode->Unlink();
-#ifdef DEBUG
-	sentinel->CheckList();
-#endif
 	
 	assertExpression( pNode->inClosed == 0 );
 	assertExpression( pNode->inOpen == 1 );
 	pNode->inOpen = 0;
-	
-#ifdef DEBUG_PATH_DEEP
-	printf( "Open Pop: " );
-	graph->PrintStateInfo( pNode->state );
-	printf( " total=%.1f\n", pNode->totalCost );		
-#endif
 	
 	return pNode;
 }
 
 void OpenQueue::Update( PathNode* pNode )
 {
-#ifdef DEBUG_PATH_DEEP
-	printf( "Open Update: " );		
-	graph->PrintStateInfo( pNode->state );
-	printf( " total=%.1f\n", pNode->totalCost );		
-#endif
-	
 	assertExpression( pNode->inOpen );
 	
 	// If the node now cost less than the one before it,
@@ -163,9 +135,6 @@ void OpenQueue::Update( PathNode* pNode )
 			it = it->next;
 		
 		it->AddBefore( pNode );
-#ifdef DEBUG
-		sentinel->CheckList();
-#endif
 	}
 }
 
@@ -178,25 +147,11 @@ class ClosedSet
 
 	void Add( PathNode* pNode )
 	{
-		#ifdef DEBUG_PATH_DEEP
-			printf( "Closed add: " );		
-			graph->PrintStateInfo( pNode->state );
-			printf( " total=%.1f\n", pNode->totalCost );		
-		#endif
-		#ifdef DEBUG
-		assertExpression( pNode->inClosed == 0 );
-		assertExpression( pNode->inOpen == 0 );
-		#endif
 		pNode->inClosed = 1;
 	}
 
 	void Remove( PathNode* pNode )
 	{
-		#ifdef DEBUG_PATH_DEEP
-			printf( "Closed remove: " );		
-			graph->PrintStateInfo( pNode->state );
-			printf( " total=%.1f\n", pNode->totalCost );		
-		#endif
 		assertExpression( pNode->inClosed == 1 );
 		assertExpression( pNode->inOpen == 0 );
 
@@ -578,27 +533,6 @@ void MicroPather::GoalReached( PathNode* node, void* start, void* end, std::vect
 		}
 		pathCache->Add( path, costVec );
 	}
-
-	#ifdef DEBUG_PATH
-	printf( "Path: " );
-	int counter=0;
-	#endif
-	for ( unsigned k=0; k<path.size(); ++k )
-	{
-		#ifdef DEBUG_PATH
-		graph->PrintStateInfo( path[k] );
-		printf( " " );
-		++counter;
-		if ( counter == 8 )
-		{
-			printf( "\n" );
-			counter = 0;
-		}
-		#endif
-	}
-	#ifdef DEBUG_PATH
-	printf( "Cost=%.1f Checksum %d\n", node->costFromStart, checksum );
-	#endif
 }
 
 
@@ -614,16 +548,6 @@ void MicroPather::GetNodeNeighbors( PathNode* node, std::vector< NodeCost >* pNo
 		// the number of neighbors and need to call back to the client.
 		stateCostVec.resize( 0 );
 		graph->AdjacentCost( node->state, &stateCostVec );
-
-		#ifdef DEBUG
-		{
-			// If this assert fires, you have passed a state
-			// as its own neighbor state. This is impossible --
-			// bad things will happen.
-			for ( unsigned i=0; i<stateCostVec.size(); ++i )
-				assertExpression( stateCostVec[i].state != node->state );
-		}
-		#endif
 
 		pNodeCost->resize( stateCostVec.size() );
 		node->numAdjacent = static_cast<int>(stateCostVec.size());
@@ -665,28 +589,6 @@ void MicroPather::GetNodeNeighbors( PathNode* node, std::vector< NodeCost >* pNo
 		}
 	}
 }
-
-
-#ifdef DEBUG
-/*
-void MicroPather::DumpStats()
-{
-	int hashTableEntries = 0;
-	for( int i=0; i<HASH_SIZE; ++i )
-		if ( hashTable[i] )
-			++hashTableEntries;
-	
-	int pathNodeBlocks = 0;
-	for( PathNode* node = pathNodeMem; node; node = node[ALLOCATE-1].left )
-		++pathNodeBlocks;
-	printf( "HashTableEntries=%d/%d PathNodeBlocks=%d [%dk] PathNodes=%d SolverCalled=%d\n",
-			  hashTableEntries, HASH_SIZE, pathNodeBlocks, 
-			  pathNodeBlocks*ALLOCATE*sizeof(PathNode)/1024,
-			  pathNodeCount,
-			  frame );
-}
-*/
-#endif
 
 
 void MicroPather::StatesInPool( std::vector< void* >* stateVec )
@@ -804,9 +706,6 @@ void PathCache::AddItem( const Item& item )
 		if ( mem[index].Empty() ) {
 			mem[index] = item;
 			++nItems;
-#ifdef DEBUG_CACHING
-			GLOUTPUT(( "Add: start=%x next=%x end=%x\n", item.start, item.next, item.end ));
-#endif
 			break;
 		}
 		else if ( mem[index].KeyEqual( item ) ) {
@@ -868,14 +767,6 @@ int MicroPather::Solve( void* startNode, void* endNode, std::vector< void* >* pa
 	// can easily be a left over path  from a previous call.
 	path->clear();
 
-	#ifdef DEBUG_PATH
-	printf( "Path: " );
-	graph->PrintStateInfo( startNode );
-	printf( " --> " );
-	graph->PrintStateInfo( endNode );
-	printf( " min cost=%f\n", graph->LeastCostEstimate( startNode, endNode ) );
-	#endif
-
 	*cost = 0.0f;
 
 	if ( startNode == endNode )
@@ -884,14 +775,9 @@ int MicroPather::Solve( void* startNode, void* endNode, std::vector< void* >* pa
 	if ( pathCache ) {
 		int cacheResult = pathCache->Solve( startNode, endNode, path, cost );
 		if ( cacheResult == SOLVED || cacheResult == NO_SOLUTION ) {
-		#ifdef DEBUG_CACHING
-			GLOUTPUT(( "PathCache hit. result=%s\n", cacheResult == SOLVED ? "solved" : "no_solution" ));
-		#endif
 			return cacheResult;
 		}
-		#ifdef DEBUG_CACHING
-		GLOUTPUT(( "PathCache miss\n" ));
-		#endif
+
 	}
 
 	++frame;
@@ -917,9 +803,6 @@ int MicroPather::Solve( void* startNode, void* endNode, std::vector< void* >* pa
 		{
 			GoalReached( node, startNode, endNode, path );
 			*cost = node->costFromStart;
-			#ifdef DEBUG_PATH
-			DumpStats();
-			#endif
 			return SOLVED;
 		}
 		else
@@ -968,9 +851,7 @@ int MicroPather::Solve( void* startNode, void* endNode, std::vector< void* >* pa
 			}
 		}					
 	}
-	#ifdef DEBUG_PATH
-	DumpStats();
-	#endif
+
 	if ( pathCache ) {
 		// Could add a bunch more with a little tracking.
 		pathCache->AddNoSolution( endNode, &startNode, 1 );
@@ -1072,13 +953,6 @@ int MicroPather::SolveForNearStates( void* startState, std::vector< StateCost >*
 			near->push_back( sc );
 		}
 	}
-#ifdef DEBUG
-	for( unsigned i=0; i<near->size(); ++i ) {
-		for( unsigned k=i+1; k<near->size(); ++k ) {
-			assertExpression( (*near)[i].state != (*near)[k].state );
-		}
-	}
-#endif
 
 	return SOLVED;
 }

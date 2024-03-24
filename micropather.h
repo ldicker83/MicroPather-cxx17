@@ -147,17 +147,6 @@ namespace micropather
 			prev->next = addThis;
 			prev = addThis;
 		}
-		#ifdef DEBUG
-		void CheckList()
-		{
-			assertExpression( totalCost == FLT_MAX );
-			for( PathNode* it = next; it != this; it=it->next ) {
-				assertExpression( it->prev == this || it->totalCost >= it->prev->totalCost );
-				assertExpression( it->totalCost <= it->next->totalCost );
-			}
-		}
-		#endif
-
 		void CalcTotalCost() {
 			if ( costFromStart < FLT_MAX && estToGoal < FLT_MAX )
 				totalCost = costFromStart + estToGoal;
@@ -393,10 +382,6 @@ namespace micropather
 		void GoalReached( PathNode* node, void* start, void* end, std::vector< void* > *path );
 
 		void GetNodeNeighbors(	PathNode* node, std::vector< NodeCost >* neighborNode );
-
-		#ifdef DEBUG
-		//void DumpStats();
-		#endif
 
 		PathNodePool			pathNodePool;
 		std::vector< StateCost >	stateCostVec;	// local to Solve, but put here to reduce memory allocation
