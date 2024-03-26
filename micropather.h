@@ -337,16 +337,7 @@ namespace micropather
 		MicroPather( Graph* graph, unsigned allocate = 250, unsigned typicalAdjacent=6, bool cache=true );
 		~MicroPather();
 
-		/**
-			Solve for the path from start to end.
-
-			@param startState	Input, the starting state for the path.
-			@param endState		Input, the ending state for the path.
-			@param path			Output, a vector of states that define the path. Empty if not found.
-			@param totalCost	Output, the cost of the path, if found.
-			@return				Success or failure, expressed as SOLVED, NO_SOLUTION, or START_END_SAME.
-		*/
-		int Solve( void* startState, void* endState, std::vector< void* >* path, float* totalCost );
+		float Solve(void* startState, void* endState, std::vector<void*>& path);
 
 		/**
 			Find all the states within a given cost from startState.
