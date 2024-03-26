@@ -26,6 +26,7 @@ distribution.
 #pragma once
 
 
+#include <float.h>
 #include <stdlib.h>
 
 #include <vector>
