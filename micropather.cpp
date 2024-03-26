@@ -59,7 +59,10 @@ public:
 	OpenQueue(const OpenQueue&) = delete;
 	void operator=(const OpenQueue&) = delete;
 
-	OpenQueue(Graph* _graph)
+	OpenQueue(Graph* _graph) :
+		sentinel{ nullptr },
+		sentinelMem{ 0 },
+		graph{ nullptr }
 	{
 		graph = _graph;
 		sentinel = (PathNode*)sentinelMem;
