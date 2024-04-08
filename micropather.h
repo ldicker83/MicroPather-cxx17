@@ -287,15 +287,16 @@ namespace micropather
 		const int mMaxItems{ 0 };
 	};
 
-	struct CacheData {
-		CacheData() : nBytesAllocated(0), nBytesUsed(0), memoryFraction(0), hit(0), miss(0), hitFraction(0) {}
-		int nBytesAllocated;
-		int nBytesUsed;
-		float memoryFraction;
 
-		int hit;
-		int miss;
-		float hitFraction;
+	struct CacheData
+	{
+		int nBytesAllocated{ 0 };
+		int nBytesUsed{ 0 };
+		float memoryFraction{ 0.0f };
+
+		int hit{ 0 };
+		int miss{ 0 };
+		float hitFraction{ 0 };
 	};
 
 	/**
