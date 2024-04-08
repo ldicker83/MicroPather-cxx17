@@ -311,8 +311,8 @@ namespace micropather
 		MicroPather(const MicroPather&) = delete;
 		MicroPather& operator=(const MicroPather&) = delete;
 
-		MicroPather(MicroPather&&) = delete;
-		MicroPather& operator=(MicroPather&&) = delete;
+		MicroPather(MicroPather&&) = delete; /// todo: allow for move semantics
+		MicroPather& operator=(MicroPather&&) = delete; /// todo: allow for move semantics
 
 		MicroPather(Graph* graph, unsigned allocate, unsigned typicalAdjacent, bool cache);
 		~MicroPather();
