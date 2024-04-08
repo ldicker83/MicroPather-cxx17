@@ -100,6 +100,20 @@ namespace micropather
 	class PathNode
 	{
 	public:
+		PathNode() = delete;
+		PathNode(const PathNode&) = delete;
+		PathNode& operator=(const PathNode&) = delete;
+
+		PathNode(PathNode&&) = delete; /// todo: allow for move semantics
+		PathNode& operator=(PathNode&&) = delete; /// todo: allow for move semantics
+
+		PathNode(uint32_t _frame,
+			void* _state,
+			float _costFromStart,
+			float _estToGoal,
+			PathNode* _parent);
+
+
 		void Init(unsigned _frame,
 			void* _state,
 			float _costFromStart,
@@ -107,18 +121,15 @@ namespace micropather
 			PathNode* _parent);
 
 		void Clear();
-		void InitSentinel() {
-			Clear();
-			Init(0, 0, FLT_MAX, FLT_MAX, 0);
-			prev = next = this;
-		}
+		
+		void InitSentinel();
 
 		void* state;			// the client state
 		float costFromStart;	// exact
 		float estToGoal;		// estimated
 		float totalCost;		// could be a function, but save some math.
 		PathNode* parent;		// the parent is used to reconstruct the path
-		unsigned frame;			// unique id for this path, so the solver can distinguish
+		uint32_t frame;			// unique id for this path, so the solver can distinguish
 		// correct from stale values
 
 		int numAdjacent;		// -1  is unknown & needs to be queried
@@ -130,27 +141,10 @@ namespace micropather
 		bool inOpen;
 		bool inClosed;
 
-		void Unlink() {
-			next->prev = prev;
-			prev->next = next;
-			next = prev = 0;
-		}
-		void AddBefore(PathNode* addThis) {
-			addThis->next = this;
-			addThis->prev = prev;
-			prev->next = addThis;
-			prev = addThis;
-		}
-		void CalcTotalCost() {
-			if (costFromStart < FLT_MAX && estToGoal < FLT_MAX)
-				totalCost = costFromStart + estToGoal;
-			else
-				totalCost = FLT_MAX;
-		}
-
-	private:
-
-		void operator=(const PathNode&);
+		void Unlink();
+		
+		void AddBefore(PathNode* addThis);
+		void CalcTotalCost();
 	};
 
 
@@ -194,7 +188,7 @@ namespace micropather
 
 		// Return all the allocated states. Useful for visuallizing what
 		// the pather is doing.
-		void AllStates(unsigned frame, std::vector< void* >* stateVec);
+		void AllStates(uint32_t frame, std::vector< void* >* stateVec);
 
 	private:
 		struct Block
@@ -203,10 +197,10 @@ namespace micropather
 			PathNode pathNode[1];
 		};
 
-		unsigned Hash(void* voidval);
-		unsigned HashSize() const { return 1 << hashShift; }
-		unsigned HashMask()	const { return ((1 << hashShift) - 1); }
-		void AddPathNode(unsigned key, PathNode* p);
+		uint32_t Hash(void* voidval);
+		uint32_t HashSize() const { return 1 << hashShift; }
+		uint32_t HashMask()	const { return ((1 << hashShift) - 1); }
+		void AddPathNode(uint32_t key, PathNode* p);
 		Block* NewBlock();
 		PathNode* Alloc();
 
@@ -215,16 +209,16 @@ namespace micropather
 		Block* blocks;
 
 		NodeCost* cache;
-		int			cacheCap;
-		int			cacheSize;
+		int cacheCap;
+		int cacheSize;
 
-		PathNode	freeMemSentinel;
-		unsigned	allocate;				// how big a block of pathnodes to allocate at once
-		unsigned	nAllocated;				// number of pathnodes allocated (from Alloc())
-		unsigned	nAvailable;				// number available for allocation
+		PathNode freeMemSentinel;
+		uint32_t allocate; // how big a block of pathnodes to allocate at once
+		uint32_t nAllocated; // number of pathnodes allocated (from Alloc())
+		uint32_t nAvailable; // number available for allocation
 
-		unsigned	hashShift;
-		unsigned	totalCollide;
+		uint32_t hashShift;
+		uint32_t totalCollide;
 	};
 
 
@@ -298,6 +292,7 @@ namespace micropather
 		int miss{ 0 };
 		float hitFraction{ 0 };
 	};
+
 
 	/**
 		Create a MicroPather object to solve for a best path. Detailed usage notes are

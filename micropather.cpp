@@ -181,10 +181,9 @@ PathNodePool::PathNodePool(unsigned _allocate, unsigned _typicalAdjacent) :
 	blocks(0),
 	allocate(_allocate),
 	nAllocated(0),
-	nAvailable(0)
+	nAvailable(0),
+	freeMemSentinel{ 0, 0, FLT_MAX, FLT_MAX, 0 }
 {
-	freeMemSentinel.InitSentinel();
-
 	cacheCap = allocate * _typicalAdjacent;
 	cacheSize = 0;
 	cache = (NodeCost*)malloc(cacheCap * sizeof(NodeCost));
@@ -288,7 +287,7 @@ PathNodePool::Block* PathNodePool::NewBlock()
 }
 
 
-unsigned PathNodePool::Hash(void* voidval)
+uint32_t PathNodePool::Hash(void* voidval)
 {
 	uintptr_t h = (uintptr_t)(voidval);
 	return h % HashMask();
@@ -317,7 +316,7 @@ PathNode* PathNodePool::Alloc()
 }
 
 
-void PathNodePool::AddPathNode(unsigned key, PathNode* root)
+void PathNodePool::AddPathNode(uint32_t key, PathNode* root)
 {
 	if (hashTable[key])
 	{
@@ -393,6 +392,19 @@ PathNode* PathNodePool::GetPathNode(unsigned frame, void* _state, float _costFro
 }
 
 
+micropather::PathNode::PathNode(uint32_t _frame, void* _state, float _costFromStart, float _estToGoal, PathNode* _parent):
+	state{ _state },
+	costFromStart{ _costFromStart },
+	estToGoal{ _estToGoal },
+	parent{ _parent },
+	frame{ _frame },
+	inOpen{ 0 },
+	inClosed{ 0 }
+{
+	CalcTotalCost();
+}
+
+
 void PathNode::Init(unsigned _frame,
 	void* _state,
 	float _costFromStart,
@@ -415,6 +427,44 @@ void PathNode::Clear()
 	memset( this, 0, sizeof( PathNode ) );
 	numAdjacent = -1;
 	cacheIndex  = -1;
+}
+
+
+void micropather::PathNode::InitSentinel()
+{
+	Clear();
+	Init(0, 0, FLT_MAX, FLT_MAX, 0);
+	prev = next = this;
+}
+
+
+void micropather::PathNode::Unlink()
+{
+	next->prev = prev;
+	prev->next = next;
+	next = prev = nullptr;
+}
+
+
+void micropather::PathNode::AddBefore(PathNode* addThis)
+{
+	addThis->next = this;
+	addThis->prev = prev;
+	prev->next = addThis;
+	prev = addThis;
+}
+
+
+void micropather::PathNode::CalcTotalCost()
+{
+	if (costFromStart < FLT_MAX && estToGoal < FLT_MAX)
+	{
+		totalCost = costFromStart + estToGoal;
+	}
+	else
+	{
+		totalCost = FLT_MAX;
+	}
 }
 
 
@@ -580,11 +630,11 @@ void MicroPather::GetNodeNeighbors(PathNode* node, std::vector< NodeCost >* pNod
 }
 
 
-void PathNodePool::AllStates(unsigned frame, std::vector< void* >* stateVec)
+void PathNodePool::AllStates(uint32_t frame, std::vector< void* >* stateVec)
 {
 	for (Block* b = blocks; b; b = b->nextBlock)
 	{
-		for (unsigned i = 0; i < allocate; ++i)
+		for (uint32_t i = 0; i < allocate; ++i)
 		{
 			if (b->pathNode[i].frame == frame)
 			{
