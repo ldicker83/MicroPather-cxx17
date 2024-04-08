@@ -744,10 +744,6 @@ const PathCache::Item* PathCache::Find(void* start, void* end)
 
 std::vector<void*> MicroPather::Solve(void* startNode, void* endNode)
 {
-	// Important to clear() in case the caller doesn't check the return code. There
-	// can easily be a left over path  from a previous call.
-	//path.clear();
-
 	std::vector<void*> path;
 
 	float cost = 0.0f;
