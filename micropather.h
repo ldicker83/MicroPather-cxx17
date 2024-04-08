@@ -330,17 +330,6 @@ namespace micropather
 
 		std::vector<void*> Solve(void* startState, void* endState);
 
-		/**
-			Find all the states within a given cost from startState.
-
-			@param startState	Input, the starting state for the path.
-			@param near			All the states within 'maxCost' of 'startState', and cost to that state.
-			@param maxCost		Input, the maximum cost that will be returned. (Higher values return
-								larger 'near' sets and take more time to compute.)
-			@return				Success or failure, expressed as SOLVED or NO_SOLUTION.
-		*/
-		int SolveForNearStates( void* startState, std::vector< StateCost >* near, float maxCost );
-
 		/** Should be called whenever the cost between states or the connection between states changes.
 			Also frees overhead memory used by MicroPather, and calling will free excess memory.
 		*/
