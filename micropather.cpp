@@ -597,8 +597,9 @@ void PathNodePool::AllStates(unsigned frame, std::vector< void* >* stateVec)
 
 PathCache::PathCache(int _allocated)
 {
-	mem = new Item[_allocated];
-	memset(mem, 0, sizeof(*mem) * _allocated);
+	//mem = new Item[_allocated];
+	//memset(mem, 0, sizeof(*mem) * _allocated);
+	mItems.resize(_allocated);
 	allocated = _allocated;
 	nItems = 0;
 	hit = 0;
@@ -608,7 +609,7 @@ PathCache::PathCache(int _allocated)
 
 PathCache::~PathCache()
 {
-	delete[] mem;
+	//delete[] mem;
 }
 
 
@@ -616,7 +617,8 @@ void PathCache::Reset()
 {
 	if (nItems)
 	{
-		memset(mem, 0, sizeof(*mem) * allocated);
+		//memset(mem, 0, sizeof(*mem) * allocated);
+		mItems.clear();
 		nItems = 0;
 		hit = 0;
 		miss = 0;
@@ -655,7 +657,7 @@ void PathCache::AddNoSolution(void* end, void* states[], int count)
 }
 
 
-std::vector<void*> PathCache::Solve(void* start, void* end, float* totalCost)
+std::vector<void*> PathCache::Solve(void* start, void* end)
 {
 	const Item* item = Find(start, end);
 	if (item)
@@ -669,12 +671,10 @@ std::vector<void*> PathCache::Solve(void* start, void* end, float* totalCost)
 		std::vector<void*> path;
 
 		path.push_back(start);
-		*totalCost = 0;
 
 		for (; start != end; start = item->next, item = Find(start, end))
 		{
 			assertExpression(item);
-			*totalCost += item->cost;
 			path.push_back(item->next);
 		}
 
@@ -692,25 +692,25 @@ std::vector<void*> PathCache::Solve(void* start, void* end, float* totalCost)
 void PathCache::AddItem(const Item& item)
 {
 	assertExpression(allocated);
-	unsigned index = item.Hash() % allocated;
+	uint32_t index = item.Hash() % allocated;
 	while (true)
 	{
-		if (mem[index].Empty())
+		if (mItems[index].Empty())
 		{
-			mem[index] = item;
+			mItems[index] = item;
 			++nItems;
 			break;
 		}
-		else if (mem[index].KeyEqual(item))
+		else if (mItems[index].KeyEqual(item))
 		{
-			assertExpression((mem[index].next && item.next) || (mem[index].next == 0 && item.next == 0));
+			assertExpression((mItems[index].next && item.next) || (mItems[index].next == 0 && item.next == 0));
 			// do nothing; in cache
 			break;
 		}
 
 		++index;
 		
-		if (index == static_cast<unsigned int>(allocated))
+		if (index == static_cast<uint32_t>(allocated))
 		{
 			index = 0;
 		}
@@ -725,15 +725,18 @@ const PathCache::Item* PathCache::Find(void* start, void* end)
 	unsigned index = fake.Hash() % allocated;
 	while (true)
 	{
-		if (mem[index].Empty())
+		if (mItems[index].Empty())
 		{
-			return 0;
+			return nullptr;
 		}
-		if (mem[index].KeyEqual(fake))
+
+		if (mItems[index].KeyEqual(fake))
 		{
-			return mem + index;
+			return &mItems[index];
 		}
+
 		++index;
+
 		if (index == static_cast<unsigned int>(allocated))
 		{
 			index = 0;
@@ -746,8 +749,6 @@ std::vector<void*> MicroPather::Solve(void* startNode, void* endNode)
 {
 	std::vector<void*> path;
 
-	float cost = 0.0f;
-
 	if (startNode == endNode)
 	{
 		return {};
@@ -755,7 +756,7 @@ std::vector<void*> MicroPather::Solve(void* startNode, void* endNode)
 
 	if (pathCache)
 	{
-		path = pathCache->Solve(startNode, endNode, &cost);
+		path = pathCache->Solve(startNode, endNode);
 		if (!path.empty())
 		{
 			return path;
@@ -780,7 +781,6 @@ std::vector<void*> MicroPather::Solve(void* startNode, void* endNode)
 		if (node->state == endNode)
 		{
 			GoalReached(node, startNode, endNode, &path);
-			cost = node->costFromStart;
 			return path;
 		}
 		else

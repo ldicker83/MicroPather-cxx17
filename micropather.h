@@ -228,35 +228,44 @@ namespace micropather
 	};
 
 
-	/* Used to cache results of paths. Much, much faster
-	   to return an existing solution than to calculate
-	   a new one. A post on this is here: http://grinninglizard.com/altera/programming/a-path-caching-2/
-	*/
 	class PathCache
 	{
 	public:
-		struct Item {
-			// The key:
-			void* start;
-			void* end;
-
-			bool KeyEqual(const Item& item) const { return start == item.start && end == item.end; }
-			bool Empty() const { return start == 0 && end == 0; }
-
-			// Data:
-			void* next;
-			float	cost;	// from 'start' to 'next'. FLT_MAX if unsolveable.
-
-			unsigned Hash() const {
-				const unsigned char* p = (const unsigned char*)(&start);
-				unsigned int h = 2166136261U;
-
-				for (unsigned i = 0; i < sizeof(void*) * 2; ++i, ++p) {
-					h ^= *p;
-					h *= 16777619;
-				}
-				return h;
+		struct Item
+		{
+			bool KeyEqual(const Item& item) const
+			{
+				return (start == item.start) && (end == item.end);
 			}
+
+			bool Empty() const
+			{
+				return (start == nullptr) && (end == nullptr);
+			}
+
+			unsigned Hash() const
+			{
+				constexpr auto FnvOffset = 2166136261u;
+				constexpr auto FnvPrime = 16777619u;
+
+				const uint8_t* byte = static_cast<const uint8_t*>(start);
+				uint32_t hash = FnvOffset;
+
+				for (uint32_t i = 0; i < sizeof(void*) * 2; ++i, ++byte)
+				{
+					hash ^= *byte;
+					hash *= FnvPrime;
+				}
+
+				return hash;
+			}
+
+			void* start{ nullptr };
+			void* end{ nullptr };
+
+			void* next{ nullptr };
+			float cost{ 0.0f };
+
 		};
 
 		PathCache(int itemsToAllocate);
@@ -265,21 +274,20 @@ namespace micropather
 		void Reset();
 		void Add(const std::vector< void* >& path, const std::vector< float >& cost);
 		void AddNoSolution(void* end, void* states[], int count);
-		std::vector<void*> Solve(void* startState, void* endState, float* totalCost);
+		std::vector<void*> Solve(void* startState, void* endState);
 
-		int AllocatedBytes() const { return allocated * sizeof(Item); }
-		int UsedBytes() const { return nItems * sizeof(Item); }
-
-		int hit;
-		int miss;
+		int hit{ 0 };
+		int miss{ 0 };
 
 	private:
 		void AddItem(const Item& item);
 		const Item* Find(void* start, void* end);
 
-		Item* mem;
-		int		allocated;
-		int		nItems;
+		std::vector<Item> mItems;
+
+		//Item* mem{ nullptr };
+		int allocated{ 0 };
+		int nItems{ 0 };
 	};
 
 	struct CacheData {
