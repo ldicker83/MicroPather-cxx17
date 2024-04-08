@@ -662,7 +662,7 @@ void PathCache::AddNoSolution(void* end, void* states[], int count)
 }
 
 
-int PathCache::Solve(void* start, void* end, std::vector< void* >* path, float* totalCost)
+std::vector<void*> PathCache::Solve(void* start, void* end, float* totalCost)
 {
 	const Item* item = Find(start, end);
 	if (item)
@@ -670,28 +670,29 @@ int PathCache::Solve(void* start, void* end, std::vector< void* >* path, float* 
 		if (item->cost == FLT_MAX)
 		{
 			++hit;
-			return MicroPather::NO_SOLUTION;
+			return {};
 		}
 
-		path->clear();
-		path->push_back(start);
+		std::vector<void*> path;
+
+		path.push_back(start);
 		*totalCost = 0;
 
 		for (; start != end; start = item->next, item = Find(start, end))
 		{
 			assertExpression(item);
 			*totalCost += item->cost;
-			path->push_back(item->next);
+			path.push_back(item->next);
 		}
 
 		++hit;
 
-		return MicroPather::SOLVED;
+		return path;
 	}
 
 	++miss;
 
-	return MicroPather::NOT_CACHED;
+	return {};
 }
 
 
@@ -778,7 +779,7 @@ std::vector<void*> MicroPather::Solve(void* startNode, void* endNode)
 	// can easily be a left over path  from a previous call.
 	//path.clear();
 
-	std::vector<void*> out;
+	std::vector<void*> path;
 
 	float cost = 0.0f;
 
@@ -789,12 +790,11 @@ std::vector<void*> MicroPather::Solve(void* startNode, void* endNode)
 
 	if (pathCache)
 	{
-		int cacheResult = pathCache->Solve(startNode, endNode, &out, &cost);
-		if (cacheResult == SOLVED || cacheResult == NO_SOLUTION)
+		path = pathCache->Solve(startNode, endNode, &cost);
+		if (!path.empty())
 		{
-			return out;
+			return path;
 		}
-
 	}
 
 	++frame;
@@ -802,8 +802,7 @@ std::vector<void*> MicroPather::Solve(void* startNode, void* endNode)
 	OpenQueue open(graph);
 	ClosedSet closed(graph);
 
-	PathNode* newPathNode = pathNodePool.GetPathNode(
-		frame, startNode, 0, graph->LeastCostEstimate(startNode, endNode), 0);
+	PathNode* newPathNode = pathNodePool.GetPathNode(frame, startNode, 0, graph->LeastCostEstimate(startNode, endNode), 0);
 
 	open.Push(newPathNode);
 	stateCostVec.resize(0);
@@ -815,9 +814,9 @@ std::vector<void*> MicroPather::Solve(void* startNode, void* endNode)
 
 		if (node->state == endNode)
 		{
-			GoalReached(node, startNode, endNode, &out);
+			GoalReached(node, startNode, endNode, &path);
 			cost = node->costFromStart;
-			return out;
+			return path;
 		}
 		else
 		{
@@ -961,5 +960,5 @@ int MicroPather::SolveForNearStates(void* startState, std::vector< StateCost >* 
 		}
 	}
 
-	return SOLVED;
+	return 0;
 }

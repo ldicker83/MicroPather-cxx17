@@ -265,7 +265,7 @@ namespace micropather
 		void Reset();
 		void Add( const std::vector< void* >& path, const std::vector< float >& cost );
 		void AddNoSolution( void* end, void* states[], int count );
-		int Solve( void* startState, void* endState, std::vector< void* >* path, float* totalCost );
+		std::vector<void*> Solve(void* startState, void* endState, float* totalCost);
 
 		int AllocatedBytes() const { return allocated * sizeof(Item); }
 		int UsedBytes() const { return nItems * sizeof(Item); }
@@ -302,16 +302,6 @@ namespace micropather
 		friend class micropather::PathNode;
 
 	  public:
-		enum
-		{
-			SOLVED,
-			NO_SOLUTION,
-			START_END_SAME,
-
-			// internal
-			NOT_CACHED
-		};
-
 		/**
 			Construct the pather, passing a pointer to the object that implements
 			the Graph callbacks.
