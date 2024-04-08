@@ -772,25 +772,27 @@ void MicroPather::GetCacheData(CacheData* data)
 }
 
 
-float MicroPather::Solve(void* startNode, void* endNode, std::vector<void*>& path)
+std::vector<void*> MicroPather::Solve(void* startNode, void* endNode)
 {
 	// Important to clear() in case the caller doesn't check the return code. There
 	// can easily be a left over path  from a previous call.
-	path.clear();
+	//path.clear();
+
+	std::vector<void*> out;
 
 	float cost = 0.0f;
 
 	if (startNode == endNode)
 	{
-		return FLT_MAX;
+		return {};
 	}
 
 	if (pathCache)
 	{
-		int cacheResult = pathCache->Solve(startNode, endNode, &path, &cost);
+		int cacheResult = pathCache->Solve(startNode, endNode, &out, &cost);
 		if (cacheResult == SOLVED || cacheResult == NO_SOLUTION)
 		{
-			return cost;
+			return out;
 		}
 
 	}
@@ -813,9 +815,9 @@ float MicroPather::Solve(void* startNode, void* endNode, std::vector<void*>& pat
 
 		if (node->state == endNode)
 		{
-			GoalReached(node, startNode, endNode, &path);
+			GoalReached(node, startNode, endNode, &out);
 			cost = node->costFromStart;
-			return cost;
+			return out;
 		}
 		else
 		{
@@ -875,7 +877,7 @@ float MicroPather::Solve(void* startNode, void* endNode, std::vector<void*>& pat
 		pathCache->AddNoSolution(endNode, &startNode, 1);
 	}
 
-	return FLT_MAX;
+	return {};
 }
 
 

@@ -338,7 +338,7 @@ namespace micropather
 		MicroPather( Graph* graph, unsigned allocate = 250, unsigned typicalAdjacent=6, bool cache=true );
 		~MicroPather();
 
-		float Solve(void* startState, void* endState, std::vector<void*>& path);
+		std::vector<void*> Solve(void* startState, void* endState);
 
 		/**
 			Find all the states within a given cost from startState.
