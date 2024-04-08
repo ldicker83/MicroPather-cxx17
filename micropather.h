@@ -302,6 +302,13 @@ namespace micropather
 		friend class micropather::PathNode;
 
 	  public:
+		  MicroPather(const MicroPather&) = delete;
+		  MicroPather& operator=(const MicroPather&) = delete;
+
+		  MicroPather(MicroPather&&) = delete;
+		  MicroPather& operator=(MicroPather&&) = delete;
+
+
 		/**
 			Construct the pather, passing a pointer to the object that implements
 			the Graph callbacks.
@@ -340,8 +347,6 @@ namespace micropather
 		void GetCacheData( CacheData* data );
 
 	  private:
-		MicroPather( const MicroPather& );	// undefined and unsupported
-		void operator=( const MicroPather ); // undefined and unsupported
 		
 		void GoalReached( PathNode* node, void* start, void* end, std::vector< void* > *path );
 
