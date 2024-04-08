@@ -580,13 +580,6 @@ void MicroPather::GetNodeNeighbors(PathNode* node, std::vector< NodeCost >* pNod
 }
 
 
-void MicroPather::StatesInPool(std::vector< void* >* stateVec)
-{
-	stateVec->clear();
-	pathNodePool.AllStates(frame, stateVec);
-}
-
-
 void PathNodePool::AllStates(unsigned frame, std::vector< void* >* stateVec)
 {
 	for (Block* b = blocks; b; b = b->nextBlock)
@@ -744,30 +737,6 @@ const PathCache::Item* PathCache::Find(void* start, void* end)
 		if (index == static_cast<unsigned int>(allocated))
 		{
 			index = 0;
-		}
-	}
-}
-
-
-void MicroPather::GetCacheData(CacheData* data)
-{
-	memset(data, 0, sizeof(*data));
-
-	if (pathCache)
-	{
-		data->nBytesAllocated = pathCache->AllocatedBytes();
-		data->nBytesUsed = pathCache->UsedBytes();
-		data->memoryFraction = (float)((double)data->nBytesUsed / (double)data->nBytesAllocated);
-
-		data->hit = pathCache->hit;
-		data->miss = pathCache->miss;
-		if (data->hit + data->miss)
-		{
-			data->hitFraction = (float)((double)(data->hit) / (double)(data->hit + data->miss));
-		}
-		else
-		{
-			data->hitFraction = 0;
 		}
 	}
 }

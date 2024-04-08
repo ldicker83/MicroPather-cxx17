@@ -308,34 +308,24 @@ namespace micropather
 		MicroPather(MicroPather&&) = delete;
 		MicroPather& operator=(MicroPather&&) = delete;
 
-
 		MicroPather(Graph* graph, unsigned allocate, unsigned typicalAdjacent, bool cache);
 		~MicroPather();
 
 		std::vector<void*> Solve(void* startState, void* endState);
 
-		/** Should be called whenever the cost between states or the connection between states changes.
-			Also frees overhead memory used by MicroPather, and calling will free excess memory.
-		*/
 		void Reset();
 
-		// Debugging function to return all states that were used by the last "solve" 
-		void StatesInPool(std::vector< void* >* stateVec);
-		void GetCacheData(CacheData* data);
-
 	private:
-
 		void GoalReached(PathNode* node, void* start, void* end, std::vector< void* >* path);
-
 		void GetNodeNeighbors(PathNode* node, std::vector< NodeCost >* neighborNode);
 
-		PathNodePool			pathNodePool;
-		std::vector< StateCost >	stateCostVec;	// local to Solve, but put here to reduce memory allocation
-		std::vector< NodeCost >	nodeCostVec;	// local to Solve, but put here to reduce memory allocation
-		std::vector< float >		costVec;
+		PathNodePool pathNodePool;
+		std::vector<StateCost> stateCostVec;
+		std::vector<NodeCost> nodeCostVec;
+		std::vector<float> costVec;
 
 		Graph* graph;
-		unsigned frame;						// incremented with every solve, used to determine if cached data needs to be refreshed
+		unsigned int frame;
 		PathCache* pathCache;
 	};
 };
