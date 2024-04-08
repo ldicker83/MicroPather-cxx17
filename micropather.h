@@ -268,11 +268,11 @@ namespace micropather
 
 		};
 
-		PathCache(int itemsToAllocate);
+		PathCache(int maxItems);
 		~PathCache();
 
 		void Reset();
-		void Add(const std::vector< void* >& path, const std::vector< float >& cost);
+		void Add(const std::vector<void*>& path, const std::vector<float>& cost);
 		void AddNoSolution(void* end, void* states[], int count);
 		std::vector<void*> Solve(void* startState, void* endState);
 
@@ -284,10 +284,7 @@ namespace micropather
 		const Item* Find(void* start, void* end);
 
 		std::vector<Item> mItems;
-
-		//Item* mem{ nullptr };
-		int allocated{ 0 };
-		int nItems{ 0 };
+		const int mMaxItems{ 0 };
 	};
 
 	struct CacheData {

@@ -595,47 +595,38 @@ void PathNodePool::AllStates(unsigned frame, std::vector< void* >* stateVec)
 }
 
 
-PathCache::PathCache(int _allocated)
+PathCache::PathCache(int maxItems):
+	hit{ 0 },
+	miss{ 0 },
+	mMaxItems{ maxItems }
 {
-	//mem = new Item[_allocated];
-	//memset(mem, 0, sizeof(*mem) * _allocated);
-	mItems.resize(_allocated);
-	allocated = _allocated;
-	nItems = 0;
+	mItems.resize(mMaxItems);
+}
+
+
+PathCache::~PathCache()
+{}
+
+
+void PathCache::Reset()
+{
+	mItems.clear();
+	mItems.resize(mMaxItems);
 	hit = 0;
 	miss = 0;
 }
 
 
-PathCache::~PathCache()
+void PathCache::Add(const std::vector<void*>& path, const std::vector<float>& cost)
 {
-	//delete[] mem;
-}
-
-
-void PathCache::Reset()
-{
-	if (nItems)
-	{
-		//memset(mem, 0, sizeof(*mem) * allocated);
-		mItems.clear();
-		nItems = 0;
-		hit = 0;
-		miss = 0;
-	}
-}
-
-
-void PathCache::Add(const std::vector< void* >& path, const std::vector< float >& cost)
-{
-	if (nItems + static_cast<int>(path.size()) > allocated * 3 / 4)
+	if (mItems.size() + path.size() > mMaxItems)
 	{
 		return;
 	}
 
-	for (unsigned i = 0; i < path.size() - 1; ++i)
+	for (size_t i = 0; i < path.size() - 1; ++i)
 	{
-		void* end = path[path.size() - 1];
+		void* end = path.back();
 		Item item = { path[i], end, path[i + 1], cost[i] };
 		AddItem(item);
 	}
@@ -644,7 +635,7 @@ void PathCache::Add(const std::vector< void* >& path, const std::vector< float >
 
 void PathCache::AddNoSolution(void* end, void* states[], int count)
 {
-	if (count + nItems > allocated * 3 / 4)
+	if (count + mItems.size() > mMaxItems)
 	{
 		return;
 	}
@@ -691,14 +682,13 @@ std::vector<void*> PathCache::Solve(void* start, void* end)
 
 void PathCache::AddItem(const Item& item)
 {
-	assertExpression(allocated);
-	uint32_t index = item.Hash() % allocated;
+	assertExpression(mMaxItems > 0);
+	uint32_t index = item.Hash() % mMaxItems;
 	while (true)
 	{
 		if (mItems[index].Empty())
 		{
 			mItems[index] = item;
-			++nItems;
 			break;
 		}
 		else if (mItems[index].KeyEqual(item))
@@ -710,7 +700,7 @@ void PathCache::AddItem(const Item& item)
 
 		++index;
 		
-		if (index == static_cast<uint32_t>(allocated))
+		if (index == static_cast<uint32_t>(mMaxItems))
 		{
 			index = 0;
 		}
@@ -720,9 +710,9 @@ void PathCache::AddItem(const Item& item)
 
 const PathCache::Item* PathCache::Find(void* start, void* end)
 {
-	assertExpression(allocated);
+	assertExpression(mMaxItems > 0);
 	Item fake = { start, end, 0, 0 };
-	unsigned index = fake.Hash() % allocated;
+	unsigned index = fake.Hash() % mMaxItems;
 	while (true)
 	{
 		if (mItems[index].Empty())
@@ -737,7 +727,7 @@ const PathCache::Item* PathCache::Find(void* start, void* end)
 
 		++index;
 
-		if (index == static_cast<unsigned int>(allocated))
+		if (index == static_cast<unsigned int>(mMaxItems))
 		{
 			index = 0;
 		}
